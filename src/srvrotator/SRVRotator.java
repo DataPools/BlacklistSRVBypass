@@ -161,7 +161,7 @@ public class SRVRotator {
 		boolean worked=true;
 		String json;
 		try {
-		json = getJson("http://mcapi.ca/blockedservers/check/" +list.get(place));
+		json = getJson("https://use.gameapis.net/mc/extra/blockedservers/check/" +list.get(place));
 		}
 		catch(ArrayIndexOutOfBoundsException e) {
 			System.out.println("No unblacklisted domains found");
