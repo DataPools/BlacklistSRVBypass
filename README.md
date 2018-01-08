@@ -14,19 +14,16 @@ All configuration is done via the "config.json" file created on first startup. X
 
 This program is only for domains that use 25565 as their port. 
 
-Zone ID is the id of your dns record zone. It can be found by running a GET request and looking for an SRV record. Here is a semi-tutorial https://kojiroh.wordpress.com/2016/07/26/how-to-find-cloudflare-zone-id/.
+If you want a full guide for configuring the guide, please check [here](https://mceula.com/bypass).
 
-Record id is known as zone identifier in this article https://support.cloudflare.com/hc/en-us/articles/203702810-Host-Partner-Full-Zone-Set-Up-API-Instructions
+The domains.txt file contains a list of domains that can be used inside of the SRV record. Example:
 
-Keep in mind this program requires and EXISTING SRV record that is already functioning. The program automatically updates the SRV record when executed
+```
+bypass1.ddns.net
+bypass2.mc-srv.com
+```
 
-Get the proper Record ID for the SRV Record you want.
-
-Input all of this information in their respective fields inside of config.json
-
-domains.txt file contains a list of domains that can be used inside of the SRV record.
-
-The program automatically gets the domain closest to the top of the file that is not blacklisted. It checks the blacklist through the blacklist api on http://mcapi.ca. If it matches the current target, no changes will be made.
+The program automatically gets the domain closest to the top of the file that is not blacklisted. It checks the blacklist through the blacklist api on http://use.gameapis.net. If it matches the current target, no changes will be made.
 
 Make sure to load your domains.txt if you are frequently blacklisted by Mojang. If all domains inside the file are blacklisted, the program will error.
 
