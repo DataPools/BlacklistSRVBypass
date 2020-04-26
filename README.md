@@ -1,7 +1,7 @@
 # BlacklistSRVBypass
 This is a Minecraft SRV Record Automatic Updater created by DataPools. This is only compatible with Cloudflare and Cloudflare API v4. The program automatically changes the SRV record inside of a domain to an unblacklisted domain that is specified within domains.txt. I used Unirest as a Rest API and Gson to parse and process Json.
 
-**A download is available [here](http://mceula.com/bypass).**
+**A download/tutorial is available [here](https://datapools.github.io/MCEula/bypass).**
 
 ## COMPILATION
 This requires Java 8. Dependencies are Google Gson and Mashape Unirest. 
@@ -14,7 +14,7 @@ All configuration is done via the "config.json" file created on first startup. X
 
 This program is only for domains that use 25565 as their port. 
 
-If you want a full guide for configuring the guide, please check [here](https://mceula.com/bypass).
+If you want a full guide for configuring the guide, please check [here](https://datapools.github.io/MCEula/bypass).
 
 The domains.txt file contains a list of domains that can be used inside of the SRV record. Example:
 
