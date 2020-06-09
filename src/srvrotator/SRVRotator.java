@@ -11,9 +11,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.UUID;
 
-import com.google.gson.JsonArray;
+import org.apache.commons.codec.digest.DigestUtils;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -29,19 +29,21 @@ public class SRVRotator {
 	static String xauthkey;
 	static String zoneid;
 	static String recordid;
+	
+	static final String sessionServerUrl = "https://sessionserver.mojang.com/blockedservers";
 	public static void main(String[] args) throws IOException, UnirestException {
 		initalize();
 		System.out.println("Started. This could take a while...");
 		String unblacklisted;
 		try {
-		unblacklisted = getUnblacklisted();
+			unblacklisted = getUnblacklisted();
 		}
 		catch(IndexOutOfBoundsException e) {
 			System.out.println("Error: domains.txt does not contain any or enough domains");
 			return;
 		}
 		if(unblacklisted.equals(null)) {
-			System.out.println("No domains found in file");
+			System.out.println("No unblacklisted domains found in file");
 			return;
 		}
 		if(unblacklisted.equals(getCurrentTarget())) {
@@ -96,7 +98,7 @@ public class SRVRotator {
 		}
 		br.close();
 		String json = response.toString();
-		JsonElement pageelement = new JsonParser().parse(json);
+		JsonElement pageelement = JsonParser.parseString(json);
 		JsonObject pageobject = pageelement.getAsJsonObject();
 		xauthemail = pageobject.get("X-Auth-Email").getAsString();
 		if(xauthemail.equals("")) {
@@ -129,7 +131,7 @@ public class SRVRotator {
 		.header("X-Auth-Key",xauthkey)
 		.asJson();
 		String json = res.getBody().toString();
-		JsonElement pageelement = new JsonParser().parse(json);
+		JsonElement pageelement = JsonParser.parseString(json);
 		JsonObject pageobject = pageelement.getAsJsonObject();
 		return pageobject.get("result").getAsJsonObject().get("name").getAsString();
 	}
@@ -139,7 +141,7 @@ public class SRVRotator {
 		.header("X-Auth-Key",xauthkey)
 		.asJson();
 		String json = res.getBody().toString();
-		JsonElement pageelement = new JsonParser().parse(json);
+		JsonElement pageelement = JsonParser.parseString(json);
 		JsonObject pageobject = pageelement.getAsJsonObject();
 		return pageobject.get("result").getAsJsonObject().get("data").getAsJsonObject().get("name").getAsString();
 	}
@@ -149,44 +151,41 @@ public class SRVRotator {
 				.header("X-Auth-Key",xauthkey)
 				.asJson();
 				String json = res.getBody().toString();
-				JsonElement pageelement = new JsonParser().parse(json);
+				JsonElement pageelement = JsonParser.parseString(json);
 				JsonObject pageobject = pageelement.getAsJsonObject();
 				return pageobject.get("result").getAsJsonObject().get("data").getAsJsonObject().get("target").getAsString();
 	}
-	public static String getUnblacklisted() throws IOException {
-		int place = 0;
-		boolean cont=true;
-		ArrayList<String> list = getFromFile(domains);
-		while(cont) {
-		boolean worked=true;
-		String json;
-		try {
-		json = getJson("https://use.gameapis.net/mc/extra/blockedservers/check/" +list.get(place));
-		}
-		catch(ArrayIndexOutOfBoundsException e) {
-			System.out.println("No unblacklisted domains found");
-			break;
-		}
-		//System.out.println(list.get(place));
-		JsonElement pageelement = new JsonParser().parse(json);
-		JsonObject pageobject = pageelement.getAsJsonObject();
-		JsonArray domains = pageobject.getAsJsonArray(list.get(place));
-		for(int i=0;i<domains.size();i++) {
-			//System.out.println(domains.get(i));
-			if(domains.get(i).getAsJsonObject().get("blocked").getAsString().equals("true")) {
-				place++;
-				worked=false;
-				break;
+	public static String getUnblacklisted() throws IOException, UnirestException {
+		ArrayList<String> listOfDomains = getFromFile(domains);
+		String blockedServersList = Unirest.get(sessionServerUrl).asString().getBody();
+		if(listOfDomains.size() > 0) {
+			for(String domain: listOfDomains) {
+				if(!isBlocked(domain,blockedServersList)) {
+					return domain;
+				}
 			}
 		}
-		if(worked==false) {
-			continue;
-		}
 		else {
-		return list.get(place);
+			System.out.println("No unblacklisted domains found");
 		}
-	  }
-		return null;	
+		return null;
+	}
+	public static boolean isBlocked(String domain, String blockedServersList) {
+		if(blockedServersList.contains(DigestUtils.sha1Hex(domain))) {
+			return true;
+		}
+		String[] domainComponents = domain.split("\\.");
+		for(int i=0;i<domainComponents.length;i++) {
+			String domainToCheck = "*";
+			for(int j=i;j<domainComponents.length;j++) {
+				domainToCheck+="."+domainComponents[j];
+			}
+			if(blockedServersList.contains(DigestUtils.sha1Hex(domainToCheck))) {
+				return true;
+			}
+		}
+		return false;
+		
 	}
 	public static String getJson(String urlinput) throws IOException {
 		URL url = new URL(urlinput);
