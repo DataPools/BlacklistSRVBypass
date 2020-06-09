@@ -29,12 +29,16 @@ public class SRVRotator {
 	static String xauthkey;
 	static String zoneid;
 	static String recordid;
-	
+	static String blockedServersList;
 	static final String sessionServerUrl = "https://sessionserver.mojang.com/blockedservers";
 	public static void main(String[] args) throws IOException, UnirestException {
 		initalize();
 		System.out.println("Started. This could take a while...");
 		String unblacklisted;
+		if(!isBlocked(getCurrentTarget(),blockedServersList)) {
+			System.out.println("Current record is unblacklisted, no changes needed");
+			return;
+		}
 		try {
 			unblacklisted = getUnblacklisted();
 		}
@@ -44,10 +48,6 @@ public class SRVRotator {
 		}
 		if(unblacklisted.equals(null)) {
 			System.out.println("No unblacklisted domains found in file");
-			return;
-		}
-		if(unblacklisted.equals(getCurrentTarget())) {
-			System.out.println("Current record is unblacklisted, no changes needed");
 			return;
 		}
 		JsonObject jsonobject = new JsonObject();
@@ -62,7 +62,7 @@ public class SRVRotator {
 		newobject.addProperty("type","SRV");
 		newobject.addProperty("name",getNameOne());
 		newobject.addProperty("content", "5 25565 "+unblacklisted);
-		newobject.addProperty("proxiable","false");
+		newobject.addProperty("proxiable",false);
 		newobject.addProperty("proxied",false);
 		newobject.addProperty("ttl", "1");
 		newobject.addProperty("data", jsonobject.toString().replace("\\", ""));
@@ -75,7 +75,7 @@ public class SRVRotator {
 				.asJson();
 		System.out.println("New domain: "+unblacklisted);
 	}
-	public static void initalize() throws IOException {
+	public static void initalize() throws IOException, UnirestException {
 		if(!domains.exists()) {
 			domains.createNewFile();
 		}
@@ -85,6 +85,7 @@ public class SRVRotator {
 			filewriter.write("{\n\"X-Auth-Email\":\"\",\n\"X-Auth-Key\":\"\",\n\"zone_id\":\"\",\n\"record_id\":\"\"\n}");
 			filewriter.close();
 		}
+		blockedServersList = Unirest.get(sessionServerUrl).asString().getBody();
 		setup();
 
 	}
@@ -157,7 +158,6 @@ public class SRVRotator {
 	}
 	public static String getUnblacklisted() throws IOException, UnirestException {
 		ArrayList<String> listOfDomains = getFromFile(domains);
-		String blockedServersList = Unirest.get(sessionServerUrl).asString().getBody();
 		if(listOfDomains.size() > 0) {
 			for(String domain: listOfDomains) {
 				if(!isBlocked(domain,blockedServersList)) {
